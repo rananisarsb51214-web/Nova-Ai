@@ -1,0 +1,17 @@
+app.post("/convert", async(req,res)=>{
+
+const {
+source,
+target,
+code
+}=req.body;
+
+const output=await ai.convert({
+source,
+target,
+code
+});
+
+res.json(output);
+
+});
