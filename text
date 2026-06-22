@@ -1,0 +1,47 @@
+NISAR AI STUDIO
+
+1. AI Code Generator
+   - HTML
+   - CSS
+   - JavaScript
+   - Python
+   - Node.js
+   - Firebase
+   - Flutter
+
+2. Code Converter
+   - HTML → React
+   - Python → Node.js
+   - JavaScript → TypeScript
+   - Bootstrap → Tailwind
+
+3. AI Explain Code
+   - Explain line by line
+   - Find bugs
+   - Suggest optimization
+
+4. Git Integration
+   git init
+   git add .
+   git commit -m "update"
+   git push origin main
+
+5. Firebase Deploy
+   firebase login
+   firebase init
+   firebase deploy
+
+6. AI Chat Assistant
+   Claude API
+   Gemini API
+   OpenAI API
+
+7. Project Memory
+   Save prompts
+   Save projects
+   Resume sessions
+
+8. Export
+   ZIP
+   GitHub Repo
+   APK
