@@ -1,4 +1,24 @@
-NISAR AI STUDIO
+nisar-ai-studio/
+
+├── frontend/
+│   ├── index.html
+│   ├── editor.html
+│   ├── app.js
+│   └── style.css
+
+├── backend/
+│   ├── server.js
+│   ├── routes/
+│   │    └── generate.js
+│   └── services/
+│        ├── claude.js
+│        ├── gemini.js
+│        └── openai.js
+
+├── firebase.json
+├── firestore.rules
+├── package.json
+└── README.mdNISAR AI STUDIO
 
 1. AI Code Generator
    - HTML
