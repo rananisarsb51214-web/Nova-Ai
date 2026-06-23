@@ -8,4 +8,11 @@ git commit -m "🚀 NOVA AI Full App with CI/CD"
 git push -u origin main
 
 # 3. GitHub Actions par jayen — build automatically start ho jayegi
-# Repo → Actions tab → "Build NOVA AI APK / AAB" click karein
+# Repo → Actions tab → "Build NOVA AI APK / AAB" click karein# Connect phone, run app
+flutter run
+
+# Take screenshots via ADB
+adb shell screencap -p /sdcard/screenshot1.png
+adb pull /sdcard/screenshot1.png screenshots/
+
+# Repeat for different screens (Login, Chat, Voice, Website)
