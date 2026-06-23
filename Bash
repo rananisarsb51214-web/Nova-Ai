@@ -1,0 +1,11 @@
+# 1. GitHub repo banayein aur push karein
+git init
+git remote add origin https://github.com/yourusername/nova_ai_app.git
+
+# 2. Sab files add karein (above wali)
+git add .
+git commit -m "🚀 NOVA AI Full App with CI/CD"
+git push -u origin main
+
+# 3. GitHub Actions par jayen — build automatically start ho jayegi
+# Repo → Actions tab → "Build NOVA AI APK / AAB" click karein
