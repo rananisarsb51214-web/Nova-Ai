@@ -1,0 +1,138 @@
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+const { MongoClient } = require('mongodb');
+
+// ==========================================
+// INIT FIREBASE ADMIN
+// ==========================================
+admin.initializeApp();
+
+// ==========================================
+// MONGODB CONNECTION (READ FCM TOKENS)
+// ==========================================
+let cachedDb = null;
+
+async function getMongoDb() {
+    if (cachedDb) return cachedDb;
+    
+    const uri = functions.config().mongodb.uri; // Set via firebase functions:config:set mongodb.uri="..."
+    const client = new MongoClient(uri);
+    await client.connect();
+    cachedDb = client.db('nova_ai_db');
+    return cachedDb;
+}
+
+// ==========================================
+// CLOUD FUNCTION: SEND NOTIFICATION (HTTP TRIGGER)
+// ==========================================
+exports.sendNovaNotification = functions.https.onCall(async (data, context) => {
+    // 1. Authentication check (optional, but secure)
+    if (!context.auth) {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated.');
+    }
+
+    const userId = context.auth.uid;
+    const { title, body } = data;
+
+    if (!title || !body) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing title or body.');
+    }
+
+    try {
+        // 2. Get user's FCM token from MongoDB
+        const db = await getMongoDb();
+        const userDoc = await db.collection('users').findOne({ user_id: userId });
+
+        if (!userDoc || !userDoc.fcm_token) {
+            console.log(`❌ No FCM token found for user: ${userId}`);
+            return { success: false, message: 'No token found' };
+        }
+
+        const fcmToken = userDoc.fcm_token;
+
+        // 3. Send push notification via FCM
+        const message = {
+            notification: {
+                title: title,
+                body: body,
+            },
+            android: {
+                priority: 'high',
+                notification: {
+                    sound: 'default',
+                    icon: '@mipmap/ic_launcher',
+                    channelId: 'nova_ai_channel',
+                },
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        sound: 'default',
+                        alert: {
+                            title: title,
+                            body: body,
+                        },
+                    },
+                },
+            },
+            token: fcmToken,
+        };
+
+        const response = await admin.messaging().send(message);
+        console.log(`✅ Notification sent successfully: ${response}`);
+        return { success: true, message: 'Notification sent', response: response };
+
+    } catch (error) {
+        console.error('❌ Error sending notification:', error);
+        throw new functions.https.HttpsError('internal', 'Failed to send notification.');
+    }
+});
+
+// ==========================================
+// (OPTIONAL) TRIGGER ON MONGODB CHANGE VIA WEBHOOK
+// ==========================================
+// If you want automatic notifications without calling from Python,
+// you can use MongoDB Atlas Triggers -> HTTP endpoint.
+// But we will call this from Python for simplicity.
+
+exports.novaWebhookReceiver = functions.https.onRequest(async (req, res) => {
+    // This endpoint will be called by our Python backend
+    if (req.method !== 'POST') {
+        return res.status(405).send('Method Not Allowed');
+    }
+
+    // Verify secret to prevent spam
+    const secret = functions.config().webhook.secret;
+    if (req.headers['x-webhook-secret'] !== secret) {
+        return res.status(403).send('Forbidden');
+    }
+
+    try {
+        const { userId, title, body } = req.body;
+        if (!userId || !title || !body) {
+            return res.status(400).json({ error: 'Missing fields' });
+        }
+
+        // Get DB and send notification
+        const db = await getMongoDb();
+        const userDoc = await db.collection('users').findOne({ user_id: userId });
+
+        if (!userDoc || !userDoc.fcm_token) {
+            return res.status(404).json({ error: 'User or token not found' });
+        }
+
+        const message = {
+            notification: { title, body },
+            token: userDoc.fcm_token,
+            android: { priority: 'high' },
+            apns: { payload: { aps: { sound: 'default' } } }
+        };
+
+        await admin.messaging().send(message);
+        res.status(200).json({ success: true });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
