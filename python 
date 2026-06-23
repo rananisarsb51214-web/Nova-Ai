@@ -1,0 +1,47 @@
+import threading
+import requests
+
+class GodModeAvatar:
+    # ... (pehle wala code) ...
+    
+    def __init__(self):
+        # ... (pehle wala code) ...
+        # Webhook URL for Cloud Function
+        self.webhook_url = os.getenv("FIREBASE_WEBHOOK_URL", "https://REGION-YOUR_PROJECT.cloudfunctions.net/novaWebhookReceiver")
+        self.webhook_secret = os.getenv("WEBHOOK_SECRET", "your_super_secret_key_123")
+
+    def _trigger_notification(self, user_id: str, pattern: str):
+        """Send async request to Firebase Cloud Function to push notification"""
+        def send():
+            try:
+                # Generate a friendly message
+                title = "🧠 NOVA Learned Something New!"
+                body = f"I just learned: \"{pattern[:50]}...\" Ask me about it!"
+                
+                response = requests.post(
+                    self.webhook_url,
+                    json={"userId": user_id, "title": title, "body": body},
+                    headers={"x-webhook-secret": self.webhook_secret},
+                    timeout=5
+                )
+                if response.status_code == 200:
+                    print("✅ Notification triggered successfully")
+                else:
+                    print(f"❌ Notification failed: {response.status_code}")
+            except Exception as e:
+                print(f"❌ Notification error: {e}")
+        
+        # Run in background thread so it doesn't block the chat
+        thread = threading.Thread(target=send, daemon=True)
+        thread.start()
+
+    def process_text(self, user_id: str, user_input: str) -> str:
+        # ... (pehle wala process_text code) ...
+        
+        # Inside this function, after saving pattern:
+        # self.memory.save_learned_pattern(user_id, user_input, final_response)
+        
+        # ADD THIS LINE AFTER SAVING PATTERN:
+        self._trigger_notification(user_id, user_input[:30])  # Send notification
+        
+        # ... rest of the code ...
