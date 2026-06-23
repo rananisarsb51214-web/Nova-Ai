@@ -15,4 +15,20 @@ flutter run
 adb shell screencap -p /sdcard/screenshot1.png
 adb pull /sdcard/screenshot1.png screenshots/
 
-# Repeat for different screens (Login, Chat, Voice, Website)
+# Repeat for different screens (Login, Chat, Voice, Website)# 1. Install Firebase CLI globally
+npm install -g firebase-tools
+
+# 2. Login
+firebase login
+
+# 3. Set MongoDB URI in Firebase Config
+firebase functions:config:set mongodb.uri="mongodb+srv://username:password@cluster.mongodb.net/nova_ai_db?retryWrites=true"
+
+# 4. Set a Webhook Secret (for security)
+firebase functions:config:set webhook.secret="your_super_secret_key_123"
+
+# 5. Deploy the functions
+firebase deploy --only functions
+
+# 6. After deploy, you will get a URL like:
+# https://REGION-YOUR_PROJECT.cloudfunctions.net/novaWebhookReceiver
