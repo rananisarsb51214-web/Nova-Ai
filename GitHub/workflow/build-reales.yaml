@@ -1,0 +1,72 @@
+name: 🚀 Build NOVA AI APK / AAB
+
+on:
+  # 1. Jab bhi main branch pe push ho
+  push:
+    branches: [ main, master ]
+  
+  # 2. Jab bhi koi new release create ho (Tag)
+  release:
+    types: [ published, created ]
+  
+  # 3. Manually trigger bhi kar sakte hain
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 🧾 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java (Required for Android)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: 🦋 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.22.0'  # Ya jo bhi latest stable ho
+
+      - name: 📦 Get Dependencies
+        run: flutter pub get
+
+      - name: 🔥 Generate Launcher Icons
+        run: flutter pub run flutter_launcher_icons:main
+
+      - name: 📱 Build APK (Release)
+        run: flutter build apk --release --split-per-abi
+
+      - name: 📦 Build App Bundle (AAB) for Play Store
+        run: flutter build appbundle --release
+
+      - name: 📤 Upload APK (Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOVA-AI-APK
+          path: build/app/outputs/flutter-apk/*.apk
+          retention-days: 30
+
+      - name: 📤 Upload AAB (Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOVA-AI-AAB
+          path: build/app/outputs/bundle/release/*.aab
+          retention-days: 30
+
+      # ==========================================
+      # (OPTIONAL) AUTO-DEPLOY TO PLAY STORE
+      # ==========================================
+      - name: 🚀 Deploy to Google Play Store (Beta/Production)
+        if: github.event_name == 'release'  # Sirf release trigger pe
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT }}
+          packageName: com.yourcompany.nova_ai
+          releaseFiles: build/app/outputs/bundle/release/*.aab
+          track: production   # Ya 'beta' / 'internal'
+          status: completed
